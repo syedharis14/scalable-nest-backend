@@ -4,6 +4,7 @@ import { RoleRepository } from "./role.repository";
 
 describe("RoleRepository", () => {
     let roleRepository: RoleRepository;
+    let prisma: PrismaService;
 
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
@@ -11,10 +12,14 @@ describe("RoleRepository", () => {
         }).compile();
 
         roleRepository = module.get<RoleRepository>(RoleRepository);
+        prisma = module.get<PrismaService>(PrismaService);
+
+        await prisma.role.deleteMany({});
     });
 
     it("should create a new role", async () => {
-        const role = await roleRepository.create("admin");
-        expect(role.name).toBe("admin");
+        const roleName = `admin-${Date.now()}`;
+        const role = await roleRepository.create(roleName);
+        expect(role.name).toBe(roleName);
     });
 });
