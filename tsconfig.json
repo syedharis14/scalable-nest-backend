@@ -6,6 +6,8 @@
         "noImplicitAny": true,
         "strictNullChecks": true,
         "strictFunctionTypes": true,
+        "experimentalDecorators": true,
+        "emitDecoratorMetadata": true,
         "module": "CommonJS",
         "target": "ES6",
         "baseUrl": "./",
