@@ -17,5 +17,28 @@ model User {
   id        String  @id @default(uuid())
   email     String  @unique
   password  String
+  roles     UserRole[]
   createdAt DateTime @default(now())
+}
+
+model Role {
+  id          String        @id @default(uuid())
+  name        String        @unique
+  permissions Permission[]
+  users       UserRole[]
+}
+
+model Permission {
+  id   String @id @default(uuid())
+  name String @unique
+  role Role?  @relation(fields: [roleId], references: [id])
+  roleId String?
+}
+
+model UserRole {
+  id     String @id @default(uuid())
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
+  role   Role   @relation(fields: [roleId], references: [id])
+  roleId String
 }
