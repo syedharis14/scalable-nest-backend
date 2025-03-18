@@ -13,6 +13,9 @@
         "baseUrl": "./",
         "paths": {
             "@/*": ["src/*"]
-        }
-    }
+        },
+        "allowJs": true
+    },
+    "include": ["src/**/*.ts", "test/**/*.ts", ".eslintrc.js"],
+    "exclude": ["node_modules"]
 }
