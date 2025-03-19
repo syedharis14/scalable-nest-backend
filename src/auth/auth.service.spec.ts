@@ -1,37 +1,73 @@
 import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
+import { User } from '@prisma/client';
+import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuthService } from './auth.service';
 
+// Mock implementations with proper typing
+const mockPrisma = {
+  user: {
+    deleteMany: jest.fn().mockResolvedValue({}),
+    create: jest
+      .fn()
+      .mockImplementation(({ data }) =>
+        Promise.resolve({ id: '1', createdAt: new Date(), ...data } as User),
+      ),
+    findUnique: jest.fn().mockResolvedValue(null),
+  },
+};
+
 describe('AuthService', () => {
   let authService: AuthService;
-  let prisma: PrismaService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
-        PrismaService,
+        { provide: PrismaService, useValue: mockPrisma },
         {
           provide: JwtService,
           useValue: {
-            sign: jest.fn(),
-            verify: jest.fn(),
+            sign: jest.fn().mockReturnValue('mock-token'),
           },
         },
       ],
     }).compile();
 
     authService = module.get<AuthService>(AuthService);
-    prisma = module.get<PrismaService>(PrismaService);
-
-    await prisma.user.deleteMany({});
   });
 
   it('should register a user', async () => {
-    // Use a unique email for each test run
     const email = `test-${Date.now()}@example.com`;
-    const user = await authService.register(email, 'password');
-    expect(user.email).toBe(email);
+    await expect(
+      authService.register(email, 'password'),
+    ).resolves.toMatchObject({
+      email,
+    });
+    // Explicitly type the expected argument to avoid an unsafe assignment.
+    const expectedCreateArg: { data: { email: string; password: unknown } } = {
+      data: {
+        email,
+        password: expect.any(String),
+      },
+    };
+    expect(mockPrisma.user.create).toHaveBeenCalledWith(expectedCreateArg);
+  });
+
+  it('should throw error for invalid credentials', async () => {
+    // Mock hashed password
+    const hashedPassword = await bcrypt.hash('correct-password', 10);
+
+    mockPrisma.user.findUnique.mockResolvedValueOnce({
+      id: '1',
+      createdAt: new Date(),
+      email: 'test@example.com',
+      password: hashedPassword,
+    } as User);
+
+    await expect(
+      authService.login('test@example.com', 'wrong-password'),
+    ).rejects.toThrow('Invalid credentials');
   });
 });

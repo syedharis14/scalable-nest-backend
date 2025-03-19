@@ -6,5 +6,4 @@ async function bootstrap() {
   await app.listen(process.env.PORT ?? 3000);
 }
 
-// Add void operator to handle the promise
 void bootstrap();

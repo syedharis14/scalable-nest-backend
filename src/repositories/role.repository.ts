@@ -1,15 +1,20 @@
 import { Injectable } from '@nestjs/common';
+import { Permission, Role } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class RoleRepository {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
-  async findAll() {
-    return this.prisma.role.findMany({ include: { permissions: true } });
+  async findAll(): Promise<(Role & { permissions: Permission[] })[]> {
+    return await this.prisma.role.findMany({
+      include: { permissions: true },
+    });
   }
 
-  async create(name: string) {
-    return this.prisma.role.create({ data: { name } });
+  async create(name: string): Promise<Role> {
+    return await this.prisma.role.create({
+      data: { name },
+    });
   }
 }

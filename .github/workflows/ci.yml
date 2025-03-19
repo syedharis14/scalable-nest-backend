@@ -41,10 +41,8 @@ jobs:
       - name: Set up environment variables
         run: echo "DATABASE_URL=postgresql://test_user:test_password@localhost:5432/test_db" >> $GITHUB_ENV
 
-      - name: Install Prisma and migrate
-        run: |
-          npm install -g prisma
-          prisma migrate dev --name init --preview-feature
+      - name: Migrate and Generate Prisma Client
+        run: npx prisma migrate dev --name init
 
       - name: Run Linting
         run: npm run lint
