@@ -25,6 +25,7 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
@@ -32,11 +33,18 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: 18
+          node-version: 22
           cache: 'npm'
 
+      - name: Verify Lock File
+        run: |
+          if [ ! -f package-lock.json ]; then
+            echo "❌ package-lock.json not found!"
+            exit 1
+          fi
+
       - name: Install Dependencies
-        run: npm ci 
+        run: npm ci --prefer-offline --no-audit
 
       - name: Set up environment variables
         run: |
@@ -45,21 +53,28 @@ jobs:
 
       - name: Wait for PostgreSQL
         run: |
-          docker run --network host --rm jbergknoff/postgresql-client \
-            -h localhost -p 5432 -U test_user -d test_db \
-            -c 'SELECT 1;' --wait 30 --quiet
+          for i in {1..10}; do
+            pg_isready -U test_user -d test_db -h localhost -p 5432 && break
+            sleep 5
+          done
 
-      - name: Install PostgreSQL Client
-        run: sudo apt-get -yqq install postgresql-client
-
-      - name: Migrate Database
+      - name: Run Prisma Migrations
         run: |
+          npx prisma generate
           npx prisma migrate reset --force
           npx prisma migrate deploy
-          npx prisma generate
 
       - name: Run Linting
         run: npm run lint
 
       - name: Run Tests
         run: npm test -- --ci --detectOpenHandles
+
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-results
+          path: |
+            test-results/**
+            coverage/**
