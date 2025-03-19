@@ -25,7 +25,6 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
@@ -34,18 +33,33 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: 18
+          cache: 'npm'
 
       - name: Install Dependencies
-        run: npm install
+        run: npm ci 
 
       - name: Set up environment variables
-        run: echo "DATABASE_URL=postgresql://test_user:test_password@localhost:5432/test_db" >> $GITHUB_ENV
+        run: |
+          echo "DATABASE_URL=postgresql://test_user:test_password@localhost:5432/test_db?schema=public" >> $GITHUB_ENV
+          echo "NODE_ENV=test" >> $GITHUB_ENV
 
-      - name: Migrate and Generate Prisma Client
-        run: npx prisma migrate dev --name init
+      - name: Wait for PostgreSQL
+        run: |
+          docker run --network host --rm jbergknoff/postgresql-client \
+            -h localhost -p 5432 -U test_user -d test_db \
+            -c 'SELECT 1;' --wait 30 --quiet
+
+      - name: Install PostgreSQL Client
+        run: sudo apt-get -yqq install postgresql-client
+
+      - name: Migrate Database
+        run: |
+          npx prisma migrate reset --force
+          npx prisma migrate deploy
+          npx prisma generate
 
       - name: Run Linting
         run: npm run lint
 
       - name: Run Tests
-        run: npm test
+        run: npm test -- --ci --detectOpenHandles
