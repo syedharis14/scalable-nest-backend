@@ -12,7 +12,8 @@
         "target": "ES6",
         "baseUrl": "./",
         "paths": {
-            "@/*": ["src/*"]
+            "@/*": ["src/*"],
+            "@prisma/client": ["generated/client"]
         },
         "allowJs": true
     },
