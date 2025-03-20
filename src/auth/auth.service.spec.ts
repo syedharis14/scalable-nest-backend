@@ -1,7 +1,7 @@
 import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
-import { User } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
+import { User } from '../../prisma/generated/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuthService } from './auth.service';
 
